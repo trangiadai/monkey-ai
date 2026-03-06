@@ -25,7 +25,15 @@ const App = () => {
     setState((prev) => ({ ...prev, [key]: value }));
 
   const solveAI = () => {
-    const queue = [
+    const getHeuristic = (m, s, b, ban, hS, oB, bD) => {
+      if (bD && !oB && !hS && m === ban) return 0;
+      if (bD) return 10 + Math.abs(m - ban) + (oB ? 5 : 0);
+      if (oB) return 20 + (m === ban && hS ? 0 : 10);
+      if (hS) return 30 + Math.abs(b - ban) + Math.abs(m - b);
+      return 40 + Math.abs(m - s);
+    };
+
+    let openList = [
       {
         m: state.monkeyPos,
         s: state.stickPos,
@@ -35,116 +43,106 @@ const App = () => {
         oB: false,
         bD: false,
         path: [],
+        g: 0,
+        f: 0,
       },
     ];
     const visited = new Set();
 
-    while (queue.length > 0) {
-      const curr = queue.shift();
+    while (openList.length > 0) {
+      openList.sort((a, b) => a.f - b.f);
+      const curr = openList.shift();
       const stateKey = `${curr.m}-${curr.s}-${curr.b}-${curr.hS}-${curr.oB}-${curr.bD}`;
       if (visited.has(stateKey)) continue;
       visited.add(stateKey);
 
-      // Điều kiện thắng: Đã rơi chuối, đang ở dưới đất, không cầm gậy và đứng đúng ô chuối
       if (curr.bD && !curr.oB && !curr.hS && curr.m === curr.ban) {
         return [
           ...curr.path,
-          { action: `NHẶT ĂN CHUỐI TẠI Ô ${curr.ban + 1} 😋`, pos: curr.ban },
+          { action: `ĂN CHUỐI TẠI Ô ${curr.ban + 1} 😋`, pos: curr.ban },
         ];
       }
 
-      // 1. Di chuyển (khi ở dưới đất)
+      const neighbors = [];
       if (!curr.oB) {
         POSITIONS.forEach((p) => {
           if (p !== curr.m)
-            queue.push({
+            neighbors.push({
               ...curr,
               m: p,
-              path: [...curr.path, { action: `Đi đến ô ${p + 1}`, pos: p }],
+              action: `Đi đến ô ${p + 1}`,
+              pos: p,
             });
         });
       }
-
-      // 2. Nhặt gậy
       if (curr.m === curr.s && !curr.hS && !curr.oB && !curr.bD) {
-        queue.push({
+        neighbors.push({
           ...curr,
           hS: true,
-          path: [
-            ...curr.path,
-            { action: `Nhặt cây gậy tại ô ${curr.m + 1}`, pos: curr.m },
-          ],
+          action: `Nhặt gậy tại ô ${curr.m + 1}`,
+          pos: curr.m,
         });
       }
-
-      // 3. Đẩy bàn
       if (curr.m === curr.b && !curr.oB && !curr.bD) {
         POSITIONS.forEach((p) => {
           if (p !== curr.b)
-            queue.push({
+            neighbors.push({
               ...curr,
               m: p,
               b: p,
               s: curr.hS ? p : curr.s,
-              path: [
-                ...curr.path,
-                { action: `Đẩy bàn đến ô ${p + 1}`, pos: p },
-              ],
+              action: `Đẩy bàn đến ô ${p + 1}`,
+              pos: p,
             });
         });
       }
-
-      // 4. Leo lên bàn
-      if (curr.m === curr.b && !curr.oB && !curr.bD) {
-        queue.push({
+      if (curr.m === curr.b && !curr.bD) {
+        neighbors.push({
           ...curr,
-          oB: true,
-          path: [
-            ...curr.path,
-            { action: `Leo lên bàn tại ô ${curr.m + 1}`, pos: curr.m },
-          ],
+          oB: !curr.oB,
+          action: curr.oB
+            ? `Leo xuống tại ô ${curr.m + 1}`
+            : `Leo lên bàn tại ô ${curr.m + 1}`,
+          pos: curr.m,
         });
       }
-
-      // 5. Chọc chuối (trên bàn, có gậy, đúng vị trí chuối)
       if (curr.oB && curr.m === curr.ban && curr.hS && !curr.bD) {
-        queue.push({
+        neighbors.push({
           ...curr,
           bD: true,
-          path: [
-            ...curr.path,
-            {
-              action: `Chọc cho chuối rơi tại ô ${curr.m + 1} 🍌`,
-              pos: curr.m,
-            },
-          ],
+          action: `Chọc chuối tại ô ${curr.m + 1} 🍌`,
+          pos: curr.m,
         });
       }
-
-      // 6. Bỏ gậy xuống đất sau khi chuối rơi
-      if (curr.hS && curr.bD) {
-        queue.push({
+      if (curr.bD && curr.oB) {
+        neighbors.push({
+          ...curr,
+          oB: false,
+          action: `Leo xuống tại ô ${curr.m + 1}`,
+          pos: curr.m,
+        });
+      }
+      if (curr.hS && curr.bD && !curr.oB) {
+        neighbors.push({
           ...curr,
           hS: false,
           s: curr.m,
-          path: [
-            ...curr.path,
-            { action: `Bỏ cây gậy xuống tại ô ${curr.m + 1}`, pos: curr.m },
-          ],
+          action: `Bỏ gậy xuống ô ${curr.m + 1}`,
+          pos: curr.m,
         });
       }
 
-      // 7. Leo xuống đất
-      if (curr.oB) {
-        queue.push({
-          ...curr,
-          oB: false,
-          path: [
-            ...curr.path,
-            { action: `Leo xuống đất tại ô ${curr.m + 1}`, pos: curr.m },
-          ],
+      neighbors.forEach((n) => {
+        const g = curr.g + 1;
+        const h = getHeuristic(n.m, n.s, n.b, n.ban, n.hS, n.oB, n.bD);
+        openList.push({
+          ...n,
+          g,
+          h,
+          f: g + h,
+          path: [...curr.path, { action: n.action, pos: n.pos }],
         });
-      }
+      });
     }
     return [];
   };
@@ -152,9 +150,11 @@ const App = () => {
   const handleSolve = () => {
     updateState("isSelecting", null);
     const result = solveAI();
-    updateState("steps", result);
-    updateState("currentStepIdx", 0);
-    updateState("isSolving", true);
+    if (result.length > 0) {
+      updateState("steps", result);
+      updateState("currentStepIdx", 0);
+      updateState("isSolving", true);
+    }
   };
 
   useEffect(() => {
@@ -164,55 +164,61 @@ const App = () => {
         if (step.action.includes("Đi đến") || step.action.includes("Đẩy bàn"))
           updateState("monkeyPos", step.pos);
         if (step.action.includes("Đẩy bàn")) updateState("boxPos", step.pos);
-        if (step.action.includes("Nhặt cây gậy")) updateState("hasStick", true);
+        if (step.action.includes("Nhặt gậy")) updateState("hasStick", true);
         if (step.action.includes("Leo lên")) updateState("onBox", true);
         if (step.action.includes("Chọc")) updateState("bananaDropped", true);
-        if (step.action.includes("Bỏ cây gậy")) {
+        if (step.action.includes("Bỏ gậy")) {
           updateState("hasStick", false);
           updateState("stickPos", state.monkeyPos);
         }
         if (step.action.includes("Leo xuống")) updateState("onBox", false);
-        if (step.action.includes("NHẶT ĂN")) updateState("isEaten", true);
-
+        if (step.action.includes("ĂN CHUỐI")) updateState("isEaten", true);
         updateState("currentStepIdx", state.currentStepIdx + 1);
-      }, 1000);
+      }, 800);
       return () => clearTimeout(timer);
-    } else if (state.currentStepIdx === state.steps.length) {
+    } else if (
+      state.currentStepIdx === state.steps.length &&
+      state.steps.length > 0
+    ) {
       updateState("isSolving", false);
     }
-  }, [state.isSolving, state.currentStepIdx, state.steps, state.monkeyPos]);
+  }, [state.isSolving, state.currentStepIdx, state.steps]);
 
   return (
     <div className="app-container">
       <header>
-        <h2>Monkey AI Solver</h2>
+        <div className="logo-section">
+          <h2>Monkey AI Solver</h2>
+          <span className="algo-tag">Algorithm: A* Search</span>
+        </div>
         <div className="controls">
           <button
-            className={`btn ${state.isSelecting === "banana" ? "active-btn" : ""}`}
+            className={`btn ${state.isSelecting === "banana" ? "active" : ""}`}
             onClick={() => updateState("isSelecting", "banana")}
           >
             🍌 Chuối
           </button>
           <button
-            className={`btn ${state.isSelecting === "stick" ? "active-btn" : ""}`}
+            className={`btn ${state.isSelecting === "stick" ? "active" : ""}`}
             onClick={() => updateState("isSelecting", "stick")}
           >
             🥢 Gậy
           </button>
           <button
-            className={`btn ${state.isSelecting === "box" ? "active-btn" : ""}`}
+            className={`btn ${state.isSelecting === "box" ? "active" : ""}`}
             onClick={() => updateState("isSelecting", "box")}
           >
             🪑 Bàn
           </button>
+          <div className="divider"></div>
           <button
-            className="btn solve"
+            className="btn solve-btn"
             onClick={handleSolve}
             disabled={state.isSolving || state.steps.length > 0}
           >
             🚀 GIẢI
           </button>
-          <button className="btn reset" onClick={handleReset}>
+          <button className="btn reset-btn" onClick={handleReset}>
             🔄 LÀM MỚI
           </button>
         </div>
@@ -237,7 +243,6 @@ const App = () => {
                 </div>
               ))}
             </div>
-
             <div className="floor">
               {POSITIONS.map((p) => (
                 <div
@@ -253,7 +258,7 @@ const App = () => {
                   {state.stickPos === p && !state.hasStick && (
                     <div
                       className="stick-entity"
-                      style={{ bottom: state.boxPos === p ? "40px" : "5px" }}
+                      style={{ bottom: state.boxPos === p ? "42px" : "8px" }}
                     >
                       🥢
                     </div>
@@ -266,7 +271,7 @@ const App = () => {
                   {state.monkeyPos === p && (
                     <div
                       className="monkey-entity"
-                      style={{ bottom: state.onBox ? "50px" : "0" }}
+                      style={{ bottom: state.onBox ? "55px" : "0" }}
                     >
                       <div style={{ position: "relative" }}>
                         {state.hasStick && (
@@ -283,12 +288,12 @@ const App = () => {
         </section>
 
         <aside className="steps-section">
-          <h4>
-            <center>Lộ trình giải</center>
-          </h4>
+          <div className="sidebar-header">LỘ TRÌNH THỰC HIỆN</div>
           <div className="steps-list">
             {state.steps.length === 0 && (
-              <p className="empty-msg">Chưa có dữ liệu...</p>
+              <p className="empty-msg">
+                Thiết lập vị trí và nhấn Giải để bắt đầu...
+              </p>
             )}
             {state.steps.map((s, i) => (
               <div
@@ -307,37 +312,48 @@ const App = () => {
       </main>
 
       <style>{`
-        .app-container { height: 100vh; display: flex; flex-direction: column; padding: 10px 20px; box-sizing: border-box; background: #fdfdfd; overflow: hidden; }
-        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #eee; }
-        h2 { margin: 0; color: #5d4037; font-size: 1.2rem; }
-        .controls { display: flex; gap: 8px; }
-        .main-layout { display: flex; flex: 1; gap: 15px; padding: 10px 0; height: calc(100vh - 80px); }
-        .game-section { flex: 7; position: relative; }
-        .game-screen { height: 100%; border: 4px solid #3e2723; border-radius: 12px; background: #fffde7; position: relative; display: flex; flex-direction: column; }
-        .ceiling { display: flex; justify-content: space-around; height: 35%; align-items: flex-start; padding-top: 10px; }
-        .floor { display: flex; justify-content: space-around; height: 35%; align-items: flex-end; position: absolute; bottom: 0; width: 100%; }
-        .cell { width: 18%; height: 80px; display: flex; justify-content: center; align-items: center; border-top: 3px solid #5d4037; position: relative; }
-        .ceiling .cell { border-top: none; border-bottom: 2px dashed #eee; height: 100px; }
-        .guide-active { border: 2px dashed #2196f3 !important; background: rgba(33, 150, 243, 0.05); cursor: pointer; border-radius: 8px; }
-        .guide-active:hover { background: rgba(33, 150, 243, 0.15); }
-        .entity { font-size: 45px; z-index: 5; }
-        .box-entity { position: absolute; bottom: 0; font-size: 65px; z-index: 1; }
-        .stick-entity { position: absolute; font-size: 40px; transform: rotate(-45deg); z-index: 2; }
-        .monkey-entity { position: absolute; font-size: 60px; transition: all 0.6s ease-in-out; z-index: 10; }
-        .stick-hand { position: absolute; top: -25px; right: -15px; font-size: 40px; transform: rotate(15deg); }
-        .steps-section { flex: 3; background: #fff; border: 1px solid #ddd; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 2px 2px 10px rgba(0,0,0,0.05); }
-        .steps-list { overflow-y: auto; padding: 10px; flex: 1; }
-        .step-row { display: flex; align-items: center; padding: 8px; margin-bottom: 6px; border-radius: 6px; background: #f9f9f9; font-size: 0.9rem; position: relative; }
-        .active-row { background: #fff9c4; border: 1px solid #fbc02d; font-weight: bold; }
-        .step-num { min-width: 24px; color: #999; font-size: 0.8rem; }
-        .arrow-pointer { position: absolute; right: 5px; color: #d32f2f; animation: blink 0.5s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } }
-        .banana-fall { position: absolute; bottom: 0; animation: drop 0.6s ease-in forwards; }
+        .app-container { height: 100vh; display: flex; flex-direction: column; padding: 15px 25px; box-sizing: border-box; background: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        h2 { margin: 0; color: #3e2723; font-size: 1.3rem; }
+        .algo-tag { font-size: 0.75rem; color: #795548; font-weight: bold; background: #efebe9; padding: 2px 8px; border-radius: 4px; }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        .divider { width: 1px; height: 25px; background: #ddd; margin: 0 5px; }
+        
+        .main-layout { display: flex; flex: 1; gap: 20px; height: calc(100vh - 100px); }
+        .game-section { flex: 7; height: 100%; }
+        .game-screen { height: 100%; border: 4px solid #5d4037; border-radius: 15px; background: #fffde7; position: relative; overflow: hidden; }
+        
+        .ceiling { display: flex; justify-content: space-around; height: 40%; width: 100%; padding-top: 15px; }
+        .floor { display: flex; justify-content: space-around; height: 40%; width: 100%; position: absolute; bottom: 0; align-items: flex-end; }
+        .cell { width: 18%; height: 90px; display: flex; justify-content: center; align-items: center; border-top: 3px solid #d7ccc8; position: relative; }
+        .ceiling .cell { border-top: none; border-bottom: 2px dashed #eeeeee; }
+        
+        .guide-active { border: 2.5px dashed #2196f3 !important; background: rgba(33, 150, 243, 0.08); cursor: pointer; border-radius: 10px; }
+        .entity { font-size: 50px; z-index: 5; }
+        .box-entity { position: absolute; bottom: 0; font-size: 70px; z-index: 1; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.1)); }
+        .stick-entity { position: absolute; font-size: 45px; transform: rotate(-45deg); z-index: 2; }
+        .monkey-entity { position: absolute; font-size: 65px; transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); z-index: 10; }
+        .stick-hand { position: absolute; top: -30px; right: -15px; font-size: 45px; transform: rotate(15deg); }
+
+        .steps-section { flex: 3; background: white; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: 1px solid #e0e0e0; }
+        .sidebar-header { background: #5d4037; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 0.9rem; letter-spacing: 1px; }
+        .steps-list { overflow-y: auto; padding: 15px; flex: 1; background: #fafafa; }
+        .step-row { display: flex; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 10px; background: white; border: 1px solid #f0f0f0; transition: 0.3s; position: relative; }
+        .active-row { background: #fff9c4; border-color: #fbc02d; transform: scale(1.02); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .step-num { min-width: 28px; color: #bcaaa4; font-weight: bold; font-size: 0.8rem; }
+        .step-text { color: #4e342e; font-size: 0.9rem; font-weight: 500; }
+        .arrow-pointer { position: absolute; right: 10px; color: #d32f2f; font-weight: bold; }
+
+        .btn { padding: 8px 16px; cursor: pointer; border-radius: 8px; border: 1px solid #d7ccc8; font-weight: bold; background: white; color: #5d4037; transition: 0.2s; }
+        .btn:hover:not(:disabled) { background: #f5f5f5; color: #000000; transform: translateY(-1px); }
+        .btn.active { background: #e3f2fd; border-color: #2196f3; color: #1976d2; }
+        .solve-btn { background: #2e7d32; color: white; border: none; box-shadow: 0 2px 5px rgba(46, 125, 50, 0.3); }
+        .reset-btn { background: #c62828; color: white; border: none; box-shadow: 0 2px 5px rgba(198, 40, 40, 0.3); }
+        .solve-btn:disabled { background: #a5d6a7; cursor: not-allowed; }
+
+        .banana-fall { position: absolute; bottom: 0; animation: drop 0.7s ease-in forwards; }
         @keyframes drop { 0% { transform: translateY(-250px); } 100% { transform: translateY(0); } }
-        .btn { padding: 8px 14px; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; font-weight: bold; font-size: 0.85rem; }
-        .solve { background: #2e7d32; color: white; border: none; }
-        .reset { background: #c62828; color: white; border: none; }
-        .active-btn { background: #e3f2fd; border-color: #2196f3; }
+        .empty-msg { color: #9e9e9e; text-align: center; margin-top: 20px; font-style: italic; font-size: 0.9rem; }
       `}</style>
     </div>
   );
