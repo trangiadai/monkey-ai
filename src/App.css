@@ -13,6 +13,10 @@
   }
 }
 
+.monkey-container {
+  transition: all 0.8s ease-in-out; /* Giúp khỉ di chuyển mượt mà */
+}
+
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
