@@ -40,3 +40,294 @@
     transform: rotate(360deg);
   }
 }
+
+/* App.css */
+.app-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 15px 25px;
+  box-sizing: border-box;
+  background: #f4f7f6;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  overflow: hidden;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 15px;
+}
+
+.logo-section h2 {
+  margin: 0;
+  color: #3e2723;
+  font-size: 1.2rem;
+}
+
+.algo-tag {
+  font-size: 0.7rem;
+  color: #795548;
+  font-weight: bold;
+  background: #efebe9;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.divider {
+  width: 1px;
+  height: 30px;
+  background: #eee;
+}
+
+.select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8f9fa;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.select-label {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #666;
+}
+
+.algo-select {
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  background: white;
+}
+
+.main-layout {
+  display: flex;
+  flex: 1;
+  gap: 20px;
+  height: calc(100vh - 110px);
+}
+
+.game-section {
+  flex: 7;
+  height: 100%;
+}
+
+.game-screen {
+  height: 100%;
+  border: 4px solid #5d4037;
+  border-radius: 15px;
+  background: #fffde7;
+  position: relative;
+  overflow: hidden;
+}
+
+.ceiling,
+.floor {
+  display: flex;
+  justify-content: space-around;
+  height: 40%;
+  width: 100%;
+  position: absolute;
+}
+
+.ceiling {
+  top: 0;
+  padding-top: 15px;
+}
+
+.floor {
+  bottom: 0;
+  align-items: flex-end;
+}
+
+.cell {
+  width: 18%;
+  height: 90px;
+  border-top: 3px solid #d7ccc8;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ceiling .cell {
+  border-top: none;
+  border-bottom: 2px dashed #eee;
+}
+
+.guide-active {
+  border: 2px dashed #2196f3 !important;
+  background: rgba(33, 150, 243, 0.05);
+  cursor: pointer;
+}
+
+.entity {
+  font-size: 50px;
+}
+
+.box-entity {
+  position: absolute;
+  bottom: 0;
+  font-size: 70px;
+}
+
+.stick-entity {
+  position: absolute;
+  font-size: 45px;
+  transform: rotate(-45deg);
+}
+
+.monkey-entity {
+  position: absolute;
+  font-size: 65px;
+  transition: all 0.8s ease-in-out; /* Đã chỉnh mượt hơn */
+  z-index: 10;
+}
+
+.stick-hand {
+  position: absolute;
+  top: -30px;
+  right: -15px;
+  font-size: 45px;
+}
+
+.steps-section {
+  flex: 3;
+  background: white;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e0e0e0;
+}
+
+.sidebar-header {
+  background: #5d4037;
+  color: white;
+  padding: 12px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+
+.steps-list {
+  overflow-y: auto;
+  padding: 15px;
+  flex: 1;
+  background: #fafafa;
+}
+
+.step-row {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: white;
+  border: 1px solid #f0f0f0;
+  font-size: 0.9rem;
+  position: relative;
+  transition: 0.2s;
+}
+
+.step-num {
+  min-width: 35px;
+  margin-right: 12px;
+  color: #8d6e63;
+  font-weight: bold;
+  border-right: 1px solid #eee;
+}
+
+.active-row {
+  background: #fff9c4;
+  border-color: #fbc02d;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transform: scale(1.02);
+}
+
+.arrow-pointer {
+  position: absolute;
+  right: 10px;
+  color: #d32f2f;
+  font-weight: bold;
+}
+
+.btn {
+  padding: 8px 15px;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 1px solid #d7ccc8;
+  font-weight: bold;
+  background: white;
+  font-size: 0.85rem;
+  transition: 0.2s;
+}
+
+.btn:hover:not(:disabled) {
+  background: #f5f5f5;
+  transform: translateY(-1px);
+}
+
+.btn.active {
+  border-color: #2196f3;
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.solve-btn {
+  background: #2e7d32;
+  color: white;
+  border: none;
+}
+
+.reset-btn {
+  background: #c62828;
+  color: white;
+  border: none;
+}
+
+.solve-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.banana-fall {
+  position: absolute;
+  bottom: 0;
+  animation: drop 0.7s ease-in forwards;
+}
+
+@keyframes drop {
+  0% {
+    transform: translateY(-250px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.empty-msg {
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  margin-top: 30px;
+  font-size: 0.85rem;
+}
