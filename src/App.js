@@ -16,11 +16,13 @@ const App = () => {
     steps: [],
     currentStepIdx: -1,
     isSelecting: null,
+    selectedAlgo: "A*",
   };
 
   const [state, setState] = useState(initialState);
 
-  const handleReset = () => setState(initialState);
+  const handleReset = () =>
+    setState({ ...initialState, selectedAlgo: state.selectedAlgo });
   const updateState = (key, value) =>
     setState((prev) => ({ ...prev, [key]: value }));
 
@@ -50,8 +52,14 @@ const App = () => {
     const visited = new Set();
 
     while (openList.length > 0) {
-      openList.sort((a, b) => a.f - b.f);
-      const curr = openList.shift();
+      let curr;
+      if (state.selectedAlgo === "DFS") curr = openList.pop();
+      else if (state.selectedAlgo === "BFS") curr = openList.shift();
+      else {
+        openList.sort((a, b) => a.f - b.f);
+        curr = openList.shift();
+      }
+
       const stateKey = `${curr.m}-${curr.s}-${curr.b}-${curr.hS}-${curr.oB}-${curr.bD}`;
       if (visited.has(stateKey)) continue;
       visited.add(stateKey);
@@ -59,7 +67,7 @@ const App = () => {
       if (curr.bD && !curr.oB && !curr.hS && curr.m === curr.ban) {
         return [
           ...curr.path,
-          { action: `ĂN CHUỐI TẠI Ô ${curr.ban + 1} 😋`, pos: curr.ban },
+          { action: `Ăn chuối tại ô ${curr.ban + 1} 😋`, pos: curr.ban },
         ];
       }
 
@@ -135,11 +143,15 @@ const App = () => {
       neighbors.forEach((n) => {
         const g = curr.g + 1;
         const h = getHeuristic(n.m, n.s, n.b, n.ban, n.hS, n.oB, n.bD);
+        let f = 0;
+        if (state.selectedAlgo === "A*") f = g + h;
+        else if (state.selectedAlgo === "GREEDY") f = h;
+        else if (state.selectedAlgo === "UCS") f = g;
         openList.push({
           ...n,
           g,
           h,
-          f: g + h,
+          f,
           path: [...curr.path, { action: n.action, pos: n.pos }],
         });
       });
@@ -172,9 +184,9 @@ const App = () => {
           updateState("stickPos", state.monkeyPos);
         }
         if (step.action.includes("Leo xuống")) updateState("onBox", false);
-        if (step.action.includes("ĂN CHUỐI")) updateState("isEaten", true);
+        if (step.action.includes("Ăn chuối")) updateState("isEaten", true);
         updateState("currentStepIdx", state.currentStepIdx + 1);
-      }, 800);
+      }, 900);
       return () => clearTimeout(timer);
     } else if (
       state.currentStepIdx === state.steps.length &&
@@ -189,7 +201,7 @@ const App = () => {
       <header>
         <div className="logo-section">
           <h2>Monkey AI Solver</h2>
-          <span className="algo-tag">Algorithm: A* Search</span>
+          <span className="algo-tag">Mode: {state.selectedAlgo}</span>
         </div>
         <div className="controls">
           <button
@@ -210,7 +222,25 @@ const App = () => {
           >
             🪑 Bàn
           </button>
+
           <div className="divider"></div>
+
+          <div className="select-wrapper">
+            <span className="select-label">Giải thuật:</span>
+            <select
+              className="algo-select"
+              value={state.selectedAlgo}
+              onChange={(e) => updateState("selectedAlgo", e.target.value)}
+              disabled={state.isSolving}
+            >
+              <option value="A*">A* Search</option>
+              <option value="GREEDY">Greedy Best-First</option>
+              <option value="BFS">BFS (Breadth-First)</option>
+              <option value="DFS">DFS (Depth-First)</option>
+              <option value="UCS">UCS (Uniform Cost)</option>
+            </select>
+          </div>
+
           <button
             className="btn solve-btn"
             onClick={handleSolve}
@@ -288,19 +318,17 @@ const App = () => {
         </section>
 
         <aside className="steps-section">
-          <div className="sidebar-header">LỘ TRÌNH THỰC HIỆN</div>
+          <div className="sidebar-header">LỘ TRÌNH ({state.selectedAlgo})</div>
           <div className="steps-list">
             {state.steps.length === 0 && (
-              <p className="empty-msg">
-                Thiết lập vị trí và nhấn Giải để bắt đầu...
-              </p>
+              <p className="empty-msg">Chọn giải thuật và nhấn Giải...</p>
             )}
             {state.steps.map((s, i) => (
               <div
                 key={i}
                 className={`step-row ${i === state.currentStepIdx - 1 ? "active-row" : ""}`}
               >
-                <span className="step-num">{i + 1}</span>
+                <span className="step-num">{i + 1}.</span>
                 <span className="step-text">{s.action}</span>
                 {i === state.currentStepIdx - 1 && (
                   <span className="arrow-pointer">◀</span>
@@ -312,48 +340,59 @@ const App = () => {
       </main>
 
       <style>{`
-        .app-container { height: 100vh; display: flex; flex-direction: column; padding: 15px 25px; box-sizing: border-box; background: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        .app-container { height: 100vh; display: flex; flex-direction: column; padding: 15px 25px; box-sizing: border-box; background: #f4f7f6; font-family: 'Segoe UI', Tahoma, sans-serif; overflow: hidden; }
         header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        h2 { margin: 0; color: #3e2723; font-size: 1.3rem; }
-        .algo-tag { font-size: 0.75rem; color: #795548; font-weight: bold; background: #efebe9; padding: 2px 8px; border-radius: 4px; }
-        .controls { display: flex; gap: 10px; align-items: center; }
-        .divider { width: 1px; height: 25px; background: #ddd; margin: 0 5px; }
+        .logo-section h2 { margin: 0; color: #3e2723; font-size: 1.2rem; }
+        .algo-tag { font-size: 0.7rem; color: #795548; font-weight: bold; background: #efebe9; padding: 2px 6px; border-radius: 4px; }
+        .controls { display: flex; gap: 12px; align-items: center; }
+        .divider { width: 1px; height: 30px; background: #eee; }
         
-        .main-layout { display: flex; flex: 1; gap: 20px; height: calc(100vh - 100px); }
+        .select-wrapper { display: flex; align-items: center; gap: 8px; background: #f8f9fa; padding: 5px 10px; border-radius: 8px; border: 1px solid #e9ecef; }
+        .select-label { font-size: 0.8rem; font-weight: bold; color: #666; }
+        .algo-select { padding: 5px; border-radius: 4px; border: 1px solid #ddd; font-size: 0.85rem; outline: none; cursor: pointer; background: white; }
+        
+        .main-layout { display: flex; flex: 1; gap: 20px; height: calc(100vh - 110px); }
         .game-section { flex: 7; height: 100%; }
         .game-screen { height: 100%; border: 4px solid #5d4037; border-radius: 15px; background: #fffde7; position: relative; overflow: hidden; }
+        .ceiling, .floor { display: flex; justify-content: space-around; height: 40%; width: 100%; position: absolute; }
+        .ceiling { top: 0; padding-top: 15px; }
+        .floor { bottom: 0; align-items: flex-end; }
+        .cell { width: 18%; height: 90px; border-top: 3px solid #d7ccc8; position: relative; display: flex; justify-content: center; align-items: center; }
+        .ceiling .cell { border-top: none; border-bottom: 2px dashed #eee; }
+        .guide-active { border: 2px dashed #2196f3 !important; background: rgba(33, 150, 243, 0.05); cursor: pointer; }
         
-        .ceiling { display: flex; justify-content: space-around; height: 40%; width: 100%; padding-top: 15px; }
-        .floor { display: flex; justify-content: space-around; height: 40%; width: 100%; position: absolute; bottom: 0; align-items: flex-end; }
-        .cell { width: 18%; height: 90px; display: flex; justify-content: center; align-items: center; border-top: 3px solid #d7ccc8; position: relative; }
-        .ceiling .cell { border-top: none; border-bottom: 2px dashed #eeeeee; }
-        
-        .guide-active { border: 2.5px dashed #2196f3 !important; background: rgba(33, 150, 243, 0.08); cursor: pointer; border-radius: 10px; }
-        .entity { font-size: 50px; z-index: 5; }
-        .box-entity { position: absolute; bottom: 0; font-size: 70px; z-index: 1; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.1)); }
-        .stick-entity { position: absolute; font-size: 45px; transform: rotate(-45deg); z-index: 2; }
-        .monkey-entity { position: absolute; font-size: 65px; transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); z-index: 10; }
-        .stick-hand { position: absolute; top: -30px; right: -15px; font-size: 45px; transform: rotate(15deg); }
+        .entity { font-size: 50px; }
+        .box-entity { position: absolute; bottom: 0; font-size: 70px; }
+        .stick-entity { position: absolute; font-size: 45px; transform: rotate(-45deg); }
+        .monkey-entity { position: absolute; font-size: 65px; transition: all 0.5s ease-in-out; }
+        .stick-hand { position: absolute; top: -30px; right: -15px; font-size: 45px; }
 
-        .steps-section { flex: 3; background: white; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: 1px solid #e0e0e0; }
-        .sidebar-header { background: #5d4037; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 0.9rem; letter-spacing: 1px; }
+        .steps-section { flex: 3; background: white; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e0e0e0; }
+        .sidebar-header { background: #5d4037; color: white; padding: 12px; text-align: center; font-weight: bold; font-size: 0.85rem; }
         .steps-list { overflow-y: auto; padding: 15px; flex: 1; background: #fafafa; }
-        .step-row { display: flex; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 10px; background: white; border: 1px solid #f0f0f0; transition: 0.3s; position: relative; }
-        .active-row { background: #fff9c4; border-color: #fbc02d; transform: scale(1.02); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .step-num { min-width: 28px; color: #bcaaa4; font-weight: bold; font-size: 0.8rem; }
-        .step-text { color: #4e342e; font-size: 0.9rem; font-weight: 500; }
+        .step-row { display: flex; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 10px; background: white; border: 1px solid #f0f0f0; font-size: 0.9rem; position: relative; transition: 0.2s; }
+        
+        .step-num { 
+          min-width: 30px; 
+          margin-right: 12px; 
+          color: #8d6e63; 
+          font-weight: bold; 
+          border-right: 1px solid #eee;
+        }
+        
+        .active-row { background: #fff9c4; border-color: #fbc02d; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .arrow-pointer { position: absolute; right: 10px; color: #d32f2f; font-weight: bold; }
 
-        .btn { padding: 8px 16px; cursor: pointer; border-radius: 8px; border: 1px solid #d7ccc8; font-weight: bold; background: white; color: #5d4037; transition: 0.2s; }
-        .btn:hover:not(:disabled) { background: #f5f5f5; color: #000000; transform: translateY(-1px); }
-        .btn.active { background: #e3f2fd; border-color: #2196f3; color: #1976d2; }
-        .solve-btn { background: #2e7d32; color: white; border: none; box-shadow: 0 2px 5px rgba(46, 125, 50, 0.3); }
-        .reset-btn { background: #c62828; color: white; border: none; box-shadow: 0 2px 5px rgba(198, 40, 40, 0.3); }
-        .solve-btn:disabled { background: #a5d6a7; cursor: not-allowed; }
+        .btn { padding: 8px 15px; cursor: pointer; border-radius: 8px; border: 1px solid #d7ccc8; font-weight: bold; background: white; font-size: 0.85rem; transition: 0.2s; }
+        .btn:hover:not(:disabled) { background: #f5f5f5; }
+        .btn.active { border-color: #2196f3; background: #e3f2fd; color: #1976d2; }
+        .solve-btn { background: #2e7d32; color: white; border: none; }
+        .reset-btn { background: #c62828; color: white; border: none; }
+        .solve-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .banana-fall { position: absolute; bottom: 0; animation: drop 0.7s ease-in forwards; }
         @keyframes drop { 0% { transform: translateY(-250px); } 100% { transform: translateY(0); } }
-        .empty-msg { color: #9e9e9e; text-align: center; margin-top: 20px; font-style: italic; font-size: 0.9rem; }
+        .empty-msg { text-align: center; color: #999; font-style: italic; margin-top: 30px; font-size: 0.85rem; }
       `}</style>
     </div>
   );
