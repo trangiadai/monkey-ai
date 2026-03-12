@@ -28,14 +28,6 @@ const App = () => {
     setState((prev) => ({ ...prev, [key]: value }));
 
   const solveAI = () => {
-    const getHeuristic = (m, s, b, ban, hS, oB, bD) => {
-      if (bD && !oB && !hS && m === ban) return 0;
-      if (bD) return 10 + Math.abs(m - ban) + (oB ? 5 : 0);
-      if (oB) return 20 + (m === ban && hS ? 0 : 10);
-      if (hS) return 30 + Math.abs(b - ban) + Math.abs(m - b);
-      return 40 + Math.abs(m - s);
-    };
-
     let openList = [
       {
         m: state.monkeyPos,
@@ -46,10 +38,19 @@ const App = () => {
         oB: false,
         bD: false,
         path: [],
-        g: 0,
-        f: 0,
+        g: 0, // cost from start
+        f: 0, // total cost (g + h)
       },
     ];
+
+    const getHeuristic = (m, s, b, ban, hS, oB, bD) => {
+      if (bD && !oB && !hS && m === ban) return 0;
+      if (bD) return 10 + Math.abs(m - ban) + (oB ? 5 : 0);
+      if (oB) return 20 + (m === ban && hS ? 0 : 10);
+      if (hS) return 30 + Math.abs(b - ban) + Math.abs(m - b);
+      return 40 + Math.abs(m - s);
+    };
+
     const visited = new Set();
 
     while (openList.length > 0) {
