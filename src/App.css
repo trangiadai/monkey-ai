@@ -331,3 +331,70 @@ header {
   margin-top: 30px;
   font-size: 0.85rem;
 }
+
+.stats-container {
+  margin-top: 15px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+}
+
+.stats-header {
+  background: #455a64;
+  color: white;
+  padding: 10px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.stats-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.stats-table tr:last-child td {
+  border-bottom: none;
+}
+
+.label-cell {
+  background: #fcfcfc;
+  font-weight: 600;
+  color: #555;
+  width: 50%;
+}
+
+.value-cell {
+  text-align: right;
+  color: #2e7d32;
+  font-family: monospace;
+  font-weight: bold;
+}
+
+.step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cost-details {
+  display: flex;
+  gap: 8px;
+}
+
+.cost-tag {
+  font-size: 0.7rem;
+  background: #f0f4f8;
+  color: #546e7a;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid #d1d9e0;
+  font-family: "Courier New", Courier, monospace;
+}
