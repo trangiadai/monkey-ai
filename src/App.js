@@ -57,19 +57,18 @@ const App = () => {
       },
     ];
     const visited = new Set();
-    let exploredCount = 0; // Đếm số trạng thái đã lấy ra khỏi OpenList
+    let exploredCount = 0;
 
     const initialConfigStr = `M:${state.monkeyPos + 1}, S:${state.stickPos + 1}, B:${state.boxPos + 1}, Ban:${state.bananaPos + 1}`;
 
     while (openList.length > 0) {
-      // 1. CHỌN NODE TIẾP THEO
       let curr;
       if (state.selectedAlgo === "DFS") {
         curr = openList.pop();
       } else if (state.selectedAlgo === "BFS") {
         curr = openList.shift();
       } else {
-        openList.sort((stateA, stateB) => stateA.f - stateB.f); //Sắp xếp theo chỉ số f, theo thứ tự từ nhỏ đến lớn
+        openList.sort((stateA, stateB) => stateA.f - stateB.f);
         curr = openList.shift();
       }
 
@@ -77,9 +76,8 @@ const App = () => {
       if (visited.has(stateKey)) continue;
 
       visited.add(stateKey);
-      exploredCount++; // Tăng biến đếm mỗi khi duyệt một trạng thái mới
+      exploredCount++;
 
-      // KIỂM TRA ĐÍCH
       if (curr.bD && !curr.oB && !curr.hS && curr.m === curr.ban) {
         updateState("stats", {
           totalStates: exploredCount,
@@ -92,8 +90,6 @@ const App = () => {
         ];
       }
 
-      // TẠO CÁC TRẠNG THÁI KẾ TIẾP (Neighbors)
-      // set các giá trị như m, oB, hS, bD,... để dựa vào đó tính giá trị heuristic và chi phí g, f sau này 
       const neighbors = [];
       if (!curr.oB) {
         POSITIONS.forEach((p) => {
@@ -229,6 +225,12 @@ const App = () => {
         </div>
         <div className="controls">
           <button
+            className={`btn ${state.isSelecting === "monkey" ? "active" : ""}`}
+            onClick={() => updateState("isSelecting", "monkey")}
+          >
+            🐒 Khỉ
+          </button>
+          <button
             className={`btn ${state.isSelecting === "banana" ? "active" : ""}`}
             onClick={() => updateState("isSelecting", "banana")}
           >
@@ -298,8 +300,11 @@ const App = () => {
               {POSITIONS.map((p) => (
                 <div
                   key={p}
-                  className={`cell ${["stick", "box"].includes(state.isSelecting) ? "guide-active" : ""}`}
+                  className={`cell ${["monkey", "stick", "box"].includes(state.isSelecting) ? "guide-active" : ""}`}
                   onClick={() => {
+                    // Logic xử lý khi click vào ô dưới sàn
+                    if (state.isSelecting === "monkey")
+                      updateState("monkeyPos", p);
                     if (state.isSelecting === "stick")
                       updateState("stickPos", p);
                     if (state.isSelecting === "box") updateState("boxPos", p);
