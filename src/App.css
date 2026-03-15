@@ -297,11 +297,17 @@ header {
   color: white;
   border: none;
 }
+.solve-btn:hover {
+  color: black;
+}
 
 .reset-btn {
   background: #c62828;
   color: white;
   border: none;
+}
+.reset-btn:hover {
+  color: black;
 }
 
 .solve-btn:disabled {
