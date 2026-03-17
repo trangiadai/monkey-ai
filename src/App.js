@@ -190,7 +190,6 @@ const App = () => {
       }
 
       const neighbors = [];
-      // Logic neighbors giữ nguyên của bạn...
       if (!curr.oB)
         POSITIONS.forEach(
           (p) =>
@@ -268,7 +267,7 @@ const App = () => {
           ...n,
           id: `${curr.id}-${idx}`,
           parentId: curr.id,
-          name: n.action, // Thư viện cần thuộc tính name
+          name: n.action,
           g,
           h,
           f,
@@ -279,7 +278,7 @@ const App = () => {
           path: [...curr.path, { action: n.action, pos: n.pos, f, g, h }],
         };
 
-        // QUAN TRỌNG: Đẩy vào openList để duyệt và allGeneratedNodes để vẽ
+        //Đẩy vào openList để duyệt và allGeneratedNodes để vẽ
         allGeneratedNodes.push(newNode);
         openList.push(newNode);
       });
@@ -539,7 +538,7 @@ const App = () => {
             <div className="tree-header">
               <span>🌳 Đồ Thị Trạng Thái (Graph View)</span>
 
-              {/* PHẦN CHÚ THÍCH MỚI */}
+              {/* PHẦN CHÚ THÍCH */}
               <div className="tree-legend">
                 <div className="legend-item">
                   <span className="dot root"></span> Gốc
@@ -563,7 +562,7 @@ const App = () => {
                   translate={{ x: 100, y: 200 }} // Vị trí gốc
                   nodeSize={{ x: 200, y: 50 }} // Khoảng cách giữa các node
                   renderCustomNodeElement={renderCustomNode} // Dùng node tự định nghĩa
-                  pathFunc="diagonal" // Đường nối cong (hoặc dùng 'straight' cho mũi tên thẳng)
+                  pathFunc="diagonal" // Đường nối cong (dùng 'straight' cho mũi tên thẳng)
                   separation={{ siblings: 1, nonSiblings: 1.5 }}
                 />
               ) : (
