@@ -6,7 +6,7 @@ In the project directory, you can run:
 
 ### `npm install`
 
-To install all the packages that is need to run the project
+To install all the packages those are need to run the project
 
 then
 
